@@ -5395,6 +5395,7 @@ dependencies = [
 name = "wisp-cli"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "clap",
  "futures-util",
  "serde",

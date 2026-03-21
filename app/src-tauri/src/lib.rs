@@ -1,4 +1,5 @@
-use tauri::State;
+use std::sync::Arc;
+use tauri::{Emitter, State};
 use wisp_core::{render_tree, Node, NodeType};
 use wisp_protocol::*;
 use wisp_server::AppState;
@@ -70,6 +71,15 @@ async fn load_document(state: State<'_, AppState>, path: String) -> Result<Strin
     Ok(format!("Loaded from {path}"))
 }
 
+#[tauri::command]
+async fn deliver_screenshot(
+    state: State<'_, AppState>,
+    request_id: String,
+    png_base64: String,
+) -> Result<(), String> {
+    state.deliver_screenshot(&request_id, png_base64).await
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let state = AppState::new();
@@ -85,17 +95,27 @@ pub fn run() {
             create_node,
             save_document,
             load_document,
+            deliver_screenshot,
         ])
-        .setup(move |_app| {
-            // Start the WebSocket server on a dedicated thread with its own tokio runtime
-            std::thread::spawn(move || {
-                let rt = tokio::runtime::Runtime::new().expect("Failed to create tokio runtime");
-                rt.block_on(async move {
-                    if let Err(e) = wisp_server::serve(server_state, WS_PORT).await {
-                        eprintln!("WebSocket server error: {e}");
-                    }
-                });
+        .setup(move |app| {
+            // Set up screenshot emitter using AppHandle
+            let handle = app.handle().clone();
+            let emitter_state = server_state.clone();
+            tauri::async_runtime::spawn(async move {
+                emitter_state
+                    .set_screenshot_emitter(Arc::new(move |request_id: String| {
+                        let _ = handle.emit("screenshot-request", request_id);
+                    }))
+                    .await;
             });
+
+            // Start the WebSocket server on Tauri's async runtime
+            tauri::async_runtime::spawn(async move {
+                if let Err(e) = wisp_server::serve(server_state, WS_PORT).await {
+                    eprintln!("WebSocket server error: {e}");
+                }
+            });
+
             Ok(())
         })
         .run(tauri::generate_context!())

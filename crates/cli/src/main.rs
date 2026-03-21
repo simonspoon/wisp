@@ -53,6 +53,12 @@ enum Commands {
     Watch,
     /// Interactive session — keeps connection open for multiple commands
     Session,
+    /// Capture a screenshot of the canvas (PNG)
+    Screenshot {
+        /// Output file path (default: wisp-screenshot.png)
+        #[arg(short, long, default_value = "wisp-screenshot.png")]
+        out: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -483,6 +489,7 @@ fn build_request(command: &Commands) -> Result<(String, Value), Box<dyn std::err
         Commands::Undo => Ok(("doc.undo".to_string(), serde_json::json!({}))),
         Commands::Redo => Ok(("doc.redo".to_string(), serde_json::json!({}))),
         Commands::Watch | Commands::Session => Err("watch/session are handled separately".into()),
+        Commands::Screenshot { .. } => Ok(("doc.screenshot".to_string(), serde_json::json!({}))),
         Commands::Node { action } => match action {
             NodeAction::Add {
                 name,
@@ -705,6 +712,21 @@ fn format_response(
                 println!("Node deleted");
             }
         },
+        Commands::Screenshot { out } => {
+            if let Some(b64) = result.get("png_base64").and_then(|v| v.as_str()) {
+                if b64.is_empty() {
+                    eprintln!("Screenshot capture failed (no canvas element?)");
+                    std::process::exit(1);
+                }
+                use base64::Engine;
+                let bytes = base64::engine::general_purpose::STANDARD
+                    .decode(b64)
+                    .map_err(|e| format!("Base64 decode error: {e}"))?;
+                std::fs::write(out, &bytes)
+                    .map_err(|e| format!("Failed to write {out}: {e}"))?;
+                println!("Screenshot saved to {out} ({} bytes)", bytes.len());
+            }
+        }
         _ => {}
     }
 

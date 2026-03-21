@@ -1,5 +1,7 @@
 import { createSignal, onMount, onCleanup, For, Show } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { toPng } from "html-to-image";
 import "./App.css";
 
 interface WispNode {
@@ -60,17 +62,43 @@ function App() {
     setCanvasScale(Math.min(scaleW, scaleH, 1));
   }
 
-  onMount(() => {
+  let unlistenScreenshot: (() => void) | undefined;
+
+  onMount(async () => {
     refresh();
     pollInterval = setInterval(refresh, 500) as unknown as number;
-    // Compute scale after first render
     setTimeout(updateScale, 100);
     window.addEventListener("resize", updateScale);
+
+    // Listen for screenshot requests from the server
+    unlistenScreenshot = await listen<string>("screenshot-request", async (event) => {
+      const requestId = event.payload;
+      const canvasRoot = document.querySelector(".canvas-root") as HTMLElement;
+      if (!canvasRoot) {
+        await invoke("deliver_screenshot", {
+          requestId,
+          pngBase64: "",
+        });
+        return;
+      }
+      try {
+        const dataUrl = await toPng(canvasRoot, {
+          pixelRatio: 2,
+          backgroundColor: "#ffffff",
+        });
+        const base64 = dataUrl.replace(/^data:image\/png;base64,/, "");
+        await invoke("deliver_screenshot", { requestId, pngBase64: base64 });
+      } catch (e) {
+        console.error("Screenshot capture failed:", e);
+        await invoke("deliver_screenshot", { requestId, pngBase64: "" });
+      }
+    });
   });
 
   onCleanup(() => {
     clearInterval(pollInterval);
     window.removeEventListener("resize", updateScale);
+    unlistenScreenshot?.();
   });
 
   function getChildren(parentId: string): WispNode[] {

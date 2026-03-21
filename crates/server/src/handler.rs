@@ -85,6 +85,7 @@ async fn process_message(text: &str, state: &AppState) -> Option<String> {
         "doc.redo" => handle_doc_redo(&req, state).await,
         "component.list" => handle_component_list(&req, state).await,
         "component.use" => handle_component_use(&req, state).await,
+        "doc.screenshot" => handle_doc_screenshot(&req, state).await,
         _ => RpcResponse::error(
             req.id.clone(),
             METHOD_NOT_FOUND,
@@ -344,6 +345,17 @@ async fn handle_doc_redo(req: &RpcRequest, state: &AppState) -> RpcResponse {
             )
         }
         None => RpcResponse::error(req.id.clone(), OPERATION_FAILED, "Nothing to redo"),
+    }
+}
+
+async fn handle_doc_screenshot(req: &RpcRequest, state: &AppState) -> RpcResponse {
+    let request_id = format!("ss-{}", uuid::Uuid::new_v4());
+    match state.request_screenshot(&request_id).await {
+        Ok(png_base64) => RpcResponse::success(
+            req.id.clone(),
+            serde_json::json!({"png_base64": png_base64}),
+        ),
+        Err(e) => RpcResponse::error(req.id.clone(), OPERATION_FAILED, e),
     }
 }
 
