@@ -57,11 +57,10 @@ jobs:
         if: runner.os == 'Windows'
         run: cp target/${{ matrix.target }}/release/wisp.exe ${{ matrix.name }}
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
         with:
-          name: ${{ matrix.name }}
-          path: ${{ matrix.name }}
+          files: ${{ matrix.name }}
 
   app:
     strategy:
@@ -104,7 +103,7 @@ jobs:
         run: pnpm install
         working-directory: app
 
-      - name: Build Tauri app
+      - name: Build and upload Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -112,34 +111,8 @@ jobs:
           projectPath: app
           tauriScript: pnpm tauri
           args: ${{ matrix.args }}
-
-      - name: Upload app artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-${{ runner.os }}
-          path: |
-            app/src-tauri/target/**/release/bundle/**/*.dmg
-            app/src-tauri/target/**/release/bundle/**/*.app
-            app/src-tauri/target/**/release/bundle/**/*.deb
-            app/src-tauri/target/**/release/bundle/**/*.AppImage
-            app/src-tauri/target/**/release/bundle/**/*.msi
-
-  release:
-    needs: [cli, app]
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: dist
-          merge-multiple: true
-
-      - name: List artifacts
-        run: find dist -type f | sort
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/**/*
-          generate_release_notes: true
+          tagName: ${{ github.ref_name }}
+          releaseName: ${{ github.ref_name }}
+          releaseBody: ""
+          releaseDraft: false
+          prerelease: false
