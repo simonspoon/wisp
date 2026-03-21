@@ -1,0 +1,11 @@
+[package]
+name = "wisp-protocol"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+wisp-core = { path = "../core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }

@@ -1,0 +1,20 @@
+[package]
+name = "wisp-cli"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "wisp"
+path = "src/main.rs"
+
+[dependencies]
+wisp-core = { path = "../core" }
+wisp-protocol = { path = "../protocol" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+tokio = { workspace = true }
+clap = { version = "4", features = ["derive"] }
+tokio-tungstenite = "0.28.0"
+futures-util = "0.3"

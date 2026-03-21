@@ -1,0 +1,18 @@
+[package]
+name = "wisp-server"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+wisp-core = { path = "../core" }
+wisp-protocol = { path = "../protocol" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+tokio = { workspace = true }
+axum = { version = "0.8", features = ["ws"] }
+futures-util = "0.3"
+
+[dev-dependencies]
+tokio-tungstenite = "0.28.0"
