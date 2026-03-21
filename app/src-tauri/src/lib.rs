@@ -52,6 +52,24 @@ async fn create_node(
     Ok(id.to_string())
 }
 
+#[tauri::command]
+async fn save_document(state: State<'_, AppState>, path: String) -> Result<String, String> {
+    let store = state.store.lock().await;
+    let json = serde_json::to_string_pretty(&*store).map_err(|e| e.to_string())?;
+    std::fs::write(&path, &json).map_err(|e| e.to_string())?;
+    Ok(format!("Saved to {path} ({} bytes)", json.len()))
+}
+
+#[tauri::command]
+async fn load_document(state: State<'_, AppState>, path: String) -> Result<String, String> {
+    let contents = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    let loaded: wisp_core::NodeStore =
+        serde_json::from_str(&contents).map_err(|e| e.to_string())?;
+    let mut store = state.store.lock().await;
+    *store = loaded;
+    Ok(format!("Loaded from {path}"))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let state = AppState::new();
@@ -65,6 +83,8 @@ pub fn run() {
             get_nodes,
             get_root_id,
             create_node,
+            save_document,
+            load_document,
         ])
         .setup(move |_app| {
             // Start the WebSocket server on a dedicated thread with its own tokio runtime

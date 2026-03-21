@@ -1,13 +1,14 @@
 use std::sync::Arc;
 
 use tokio::sync::{broadcast, Mutex};
-use wisp_core::NodeStore;
+use wisp_core::{NodeStore, UndoStack};
 use wisp_protocol::RpcNotification;
 
 /// Shared server state.
 #[derive(Clone)]
 pub struct AppState {
     pub store: Arc<Mutex<NodeStore>>,
+    pub undo_stack: Arc<Mutex<UndoStack>>,
     pub tx: broadcast::Sender<String>,
 }
 
@@ -16,6 +17,7 @@ impl AppState {
         let (tx, _) = broadcast::channel(256);
         Self {
             store: Arc::new(Mutex::new(NodeStore::new())),
+            undo_stack: Arc::new(Mutex::new(UndoStack::default())),
             tx,
         }
     }

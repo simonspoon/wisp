@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
-use wisp_core::{Layout, NodeType, Style, Typography};
+use wisp_core::{Layout, NodeType, PartialLayout, Style, Typography};
 
 /// JSON-RPC 2.0 request.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -64,14 +64,14 @@ pub struct NodeCreateResult {
     pub id: Uuid,
 }
 
-/// Params for node.edit
+/// Params for node.edit — uses partial types so only explicitly-set fields are overwritten.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NodeEditParams {
     pub id: Uuid,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub layout: Option<Layout>,
+    pub layout: Option<PartialLayout>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub style: Option<Style>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -119,6 +119,49 @@ pub struct NodeQueryParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NodeQueryResult {
     pub nodes: Vec<wisp_core::Node>,
+}
+
+/// Params for component.use
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComponentUseParams {
+    pub name: String,
+    #[serde(default)]
+    pub parent_id: Uuid,
+    pub x: Option<f64>,
+    pub y: Option<f64>,
+    pub label: Option<String>,
+    pub value: Option<String>,
+}
+
+/// Result for component.use
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComponentUseResult {
+    pub ids: Vec<Uuid>,
+}
+
+/// A single component template info (for listing).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComponentInfo {
+    pub name: String,
+    pub description: String,
+}
+
+/// Result for component.list
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComponentListResult {
+    pub components: Vec<ComponentInfo>,
+}
+
+/// Params for doc.save
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DocSaveParams {
+    pub path: String,
+}
+
+/// Params for doc.load
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DocLoadParams {
+    pub path: String,
 }
 
 // --- Notification types ---

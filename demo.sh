@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Wisp Demo — builds a dashboard design using only CLI commands
-# The desktop app shows the design appearing in real-time.
+# Wisp Demo v0.2 — showcases all CLI features including save/load, undo/redo,
+# components, and interactive session.
 #
 # Usage: ./demo.sh
 #
@@ -71,7 +71,7 @@ sleep 2
 
 echo ""
 echo -e "${BOLD}═══════════════════════════════════════════${RESET}"
-echo -e "${BOLD}  Wisp Demo: Building a Dashboard via CLI  ${RESET}"
+echo -e "${BOLD}  Wisp v0.2 Demo: Full Feature Showcase    ${RESET}"
 echo -e "${BOLD}═══════════════════════════════════════════${RESET}"
 echo ""
 
@@ -82,25 +82,25 @@ add_node() {
     echo "$output" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
 }
 
-# === Step 1: Header bar ===
+# ═══════════════════════════════════
+# Part 1: Build a dashboard layout
+# ═══════════════════════════════════
+
 step "Creating header bar"
 HEADER=$(add_node "Header" -t frame --width 1920 --height 80 --fill "#1e40af")
 result "Header: $HEADER"
 pause
 
-# === Step 2: Header text ===
 step "Adding app title to header"
 add_node "App Title" -t text -x 24 -y 22 --parent "$HEADER" --text "Wisp Dashboard" --font-size 28 > /dev/null
 result "Title text added"
 pause
 
-# === Step 3: Sidebar ===
 step "Creating sidebar"
 SIDEBAR=$(add_node "Sidebar" -t frame -y 80 --width 280 --height 1000 --fill "#1e3a5f")
 result "Sidebar: $SIDEBAR"
 pause
 
-# === Step 4: Sidebar nav items ===
 step "Adding navigation items"
 add_node "Nav: Overview" -t text -x 24 -y 24 --parent "$SIDEBAR" --text "Overview" --font-size 15 > /dev/null
 add_node "Nav: Analytics" -t text -x 24 -y 56 --parent "$SIDEBAR" --text "Analytics" --font-size 15 > /dev/null
@@ -109,66 +109,149 @@ add_node "Nav: Settings" -t text -x 24 -y 120 --parent "$SIDEBAR" --text "Settin
 result "4 nav items added"
 pause
 
-# === Step 5: Main content area ===
 step "Creating main content area"
 MAIN=$(add_node "Main Content" -t frame -x 280 -y 80 --width 1640 --height 1000 --fill "#f1f5f9")
 result "Main area: $MAIN"
 pause
 
-# === Step 6: Stats cards row ===
-step "Adding stats cards"
-CARD1=$(add_node "Users Card" -t frame -x 32 -y 32 --parent "$MAIN" --width 370 --height 160 --fill "#ffffff" --radius 16)
-CARD2=$(add_node "Revenue Card" -t frame -x 426 -y 32 --parent "$MAIN" --width 370 --height 160 --fill "#ffffff" --radius 16)
-CARD3=$(add_node "Orders Card" -t frame -x 820 -y 32 --parent "$MAIN" --width 370 --height 160 --fill "#ffffff" --radius 16)
-CARD4=$(add_node "Growth Card" -t frame -x 1214 -y 32 --parent "$MAIN" --width 370 --height 160 --fill "#ffffff" --radius 16)
-result "4 stat cards created"
+# ═══════════════════════════════════
+# Part 2: Components (v0.2 feature)
+# ═══════════════════════════════════
+
+echo ""
+echo -e "${BOLD}── Component Templates ──${RESET}"
+echo ""
+
+step "Listing available components"
+"$WISP" components list
 pause
 
-# === Step 7: Card labels ===
-step "Adding card content"
-add_node "Label" -t text -x 24 -y 20 --parent "$CARD1" --text "Total Users" --font-size 13 > /dev/null
-add_node "Value" -t text -x 24 -y 60 --parent "$CARD1" --text "12,847" --font-size 36 > /dev/null
-add_node "Change" -t text -x 24 -y 115 --parent "$CARD1" --text "+14.2% from last month" --font-size 12 > /dev/null
+step "Using stat-card components for dashboard metrics"
+CARD1=$("$WISP" components use stat-card --parent "$MAIN" 2>&1 | grep "root:" | awk '{print $2}')
+"$WISP" node edit "$CARD1" -x 32 -y 32 2>&1 > /dev/null
+result "Stats card 1 placed"
 
-add_node "Label" -t text -x 24 -y 20 --parent "$CARD2" --text "Revenue" --font-size 13 > /dev/null
-add_node "Value" -t text -x 24 -y 60 --parent "$CARD2" --text '$84,254' --font-size 36 > /dev/null
-add_node "Change" -t text -x 24 -y 115 --parent "$CARD2" --text "+8.1% from last month" --font-size 12 > /dev/null
+CARD2=$("$WISP" components use stat-card --parent "$MAIN" 2>&1 | grep "root:" | awk '{print $2}')
+"$WISP" node edit "$CARD2" -x 340 -y 32 2>&1 > /dev/null
+result "Stats card 2 placed"
 
-add_node "Label" -t text -x 24 -y 20 --parent "$CARD3" --text "Orders" --font-size 13 > /dev/null
-add_node "Value" -t text -x 24 -y 60 --parent "$CARD3" --text "3,621" --font-size 36 > /dev/null
-add_node "Change" -t text -x 24 -y 115 --parent "$CARD3" --text "+23.5% from last month" --font-size 12 > /dev/null
+CARD3=$("$WISP" components use stat-card --parent "$MAIN" 2>&1 | grep "root:" | awk '{print $2}')
+"$WISP" node edit "$CARD3" -x 648 -y 32 2>&1 > /dev/null
+result "Stats card 3 placed"
 
-add_node "Label" -t text -x 24 -y 20 --parent "$CARD4" --text "Growth" --font-size 13 > /dev/null
-add_node "Value" -t text -x 24 -y 60 --parent "$CARD4" --text "18.2%" --font-size 36 > /dev/null
-add_node "Change" -t text -x 24 -y 115 --parent "$CARD4" --text "+2.4% from last quarter" --font-size 12 > /dev/null
-result "Stats content added to all 4 cards"
+CARD4=$("$WISP" components use stat-card --parent "$MAIN" 2>&1 | grep "root:" | awk '{print $2}')
+"$WISP" node edit "$CARD4" -x 956 -y 32 2>&1 > /dev/null
+result "Stats card 4 placed"
 pause
 
-# === Step 8: Chart area ===
-step "Creating chart section"
-CHART=$(add_node "Chart Panel" -t frame -x 32 -y 224 --parent "$MAIN" --width 1000 --height 500 --fill "#ffffff" --radius 16)
+step "Adding buttons"
+BTN1=$("$WISP" components use button --parent "$MAIN" 2>&1 | grep "root:" | awk '{print $2}')
+"$WISP" node edit "$BTN1" -x 32 -y 200 2>&1 > /dev/null
+BTN2=$("$WISP" components use button --parent "$MAIN" 2>&1 | grep "root:" | awk '{print $2}')
+"$WISP" node edit "$BTN2" -x 170 -y 200 2>&1 > /dev/null
+result "2 buttons placed"
+pause
+
+# ═══════════════════════════════════
+# Part 3: Partial edits (v0.2 fix)
+# ═══════════════════════════════════
+
+echo ""
+echo -e "${BOLD}── Partial Edits (Bug Fix) ──${RESET}"
+echo ""
+
+step "Editing only fill color on stat card (layout must be preserved)"
+"$WISP" node edit "$CARD1" --fill "#e0f2fe" 2>&1
+result "Fill changed, position preserved"
+pause
+
+step "Editing only x position on button (height/fill must be preserved)"
+"$WISP" node edit "$BTN1" -x 50 2>&1
+result "Position changed, style preserved"
+pause
+
+# ═══════════════════════════════════
+# Part 4: Undo/Redo (v0.2 feature)
+# ═══════════════════════════════════
+
+echo ""
+echo -e "${BOLD}── Undo/Redo ──${RESET}"
+echo ""
+
+step "Current node count"
+"$WISP" tree 2>&1 | wc -l | xargs -I{} echo "  {} lines in tree"
+
+step "Undoing last 3 operations"
+"$WISP" undo 2>&1
+"$WISP" undo 2>&1
+"$WISP" undo 2>&1
+result "3 operations undone"
+
+step "Node count after undo"
+"$WISP" tree 2>&1 | wc -l | xargs -I{} echo "  {} lines in tree"
+
+step "Redoing all 3"
+"$WISP" redo 2>&1
+"$WISP" redo 2>&1
+"$WISP" redo 2>&1
+result "3 operations redone"
+pause
+
+# ═══════════════════════════════════
+# Part 5: Save/Load (v0.2 feature)
+# ═══════════════════════════════════
+
+echo ""
+echo -e "${BOLD}── Save/Load ──${RESET}"
+echo ""
+
+SAVE_PATH="/tmp/wisp-demo-dashboard.json"
+step "Saving document to $SAVE_PATH"
+"$WISP" save "$SAVE_PATH" 2>&1
+result "Document saved"
+pause
+
+step "File size"
+ls -lh "$SAVE_PATH" | awk '{print "  " $5 " " $9}'
+pause
+
+# ═══════════════════════════════════
+# Part 6: Chart bars via session
+# ═══════════════════════════════════
+
+echo ""
+echo -e "${BOLD}── Interactive Session ──${RESET}"
+echo ""
+
+step "Creating chart area and bars via session mode"
+CHART=$(add_node "Chart Panel" -t frame -x 32 -y 260 --parent "$MAIN" --width 1000 --height 500 --fill "#ffffff" --radius 16)
 add_node "Chart Title" -t text -x 24 -y 20 --parent "$CHART" --text "Revenue Over Time" --font-size 18 > /dev/null
-result "Chart panel with title"
-pause
 
-# === Step 9: Chart bars (simulated bar chart) ===
-step "Drawing chart bars"
 BAR_COLORS=("#3b82f6" "#2563eb" "#60a5fa" "#1d4ed8" "#93c5fd" "#3b82f6" "#60a5fa" "#2563eb" "#3b82f6" "#93c5fd" "#60a5fa" "#1d4ed8")
 BAR_HEIGHTS=(180 220 150 280 200 320 250 300 260 190 340 380)
 MONTHS=("Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug" "Sep" "Oct" "Nov" "Dec")
+
+# Build session commands
+SESSION_CMDS=""
 for i in $(seq 0 11); do
     bx=$((24 + i * 80))
     bh=${BAR_HEIGHTS[$i]}
     by=$((440 - bh))
-    add_node "${MONTHS[$i]} Bar" -t rectangle -x "$bx" -y "$by" --parent "$CHART" --width 56 --height "$bh" --fill "${BAR_COLORS[$i]}" --radius 4 > /dev/null
-    add_node "${MONTHS[$i]}" -t text -x "$((bx + 12))" -y 450 --parent "$CHART" --text "${MONTHS[$i]}" --font-size 11 > /dev/null
+    SESSION_CMDS="${SESSION_CMDS}node add \"${MONTHS[$i]} Bar\" -t rectangle -x $bx -y $by --parent $CHART --width 56 --height $bh --fill \"${BAR_COLORS[$i]}\" --radius 4\n"
+    SESSION_CMDS="${SESSION_CMDS}node add \"${MONTHS[$i]}\" -t text -x $((bx + 12)) -y 450 --parent $CHART --text \"${MONTHS[$i]}\" --font-size 11\n"
 done
-result "12-month bar chart drawn"
+SESSION_CMDS="${SESSION_CMDS}quit\n"
+
+echo -e "$SESSION_CMDS" | "$WISP" session 2>/dev/null | grep -c "Created node" | xargs -I{} echo "  {} nodes created via session"
+result "12-month bar chart drawn in single session"
 pause
 
-# === Step 10: Activity feed ===
+# ═══════════════════════════════════
+# Part 7: Activity feed
+# ═══════════════════════════════════
+
 step "Creating activity feed"
-FEED=$(add_node "Activity Feed" -t frame -x 1056 -y 224 --parent "$MAIN" --width 528 --height 500 --fill "#ffffff" --radius 16)
+FEED=$(add_node "Activity Feed" -t frame -x 1056 -y 260 --parent "$MAIN" --width 528 --height 500 --fill "#ffffff" --radius 16)
 add_node "Feed Title" -t text -x 24 -y 20 --parent "$FEED" --text "Recent Activity" --font-size 18 > /dev/null
 
 ACTIVITIES=(
@@ -188,7 +271,10 @@ done
 result "Activity feed with 8 entries"
 pause
 
-# === Final tree ===
+# ═══════════════════════════════════
+# Final save and tree
+# ═══════════════════════════════════
+
 echo ""
 echo -e "${BOLD}═══════════════════════════════════════════${RESET}"
 echo -e "${BOLD}  Final Document Tree                       ${RESET}"
@@ -197,7 +283,13 @@ echo ""
 "$WISP" tree
 echo ""
 
-echo -e "${GREEN}${BOLD}Demo complete!${RESET} The dashboard is visible in the Wisp app."
+step "Final save"
+"$WISP" save "$SAVE_PATH" 2>&1
+
+NODE_COUNT=$("$WISP" tree 2>&1 | wc -l | xargs)
+echo ""
+echo -e "${GREEN}${BOLD}Demo complete!${RESET} ${NODE_COUNT} nodes in the design."
+echo -e "${DIM}v0.2 features demonstrated: partial edits, save/load, undo/redo, components, sessions${RESET}"
 echo -e "${DIM}Press Ctrl+C to stop the app.${RESET}"
 echo ""
 
