@@ -116,3 +116,18 @@ jobs:
           releaseBody: ""
           releaseDraft: false
           prerelease: false
+
+  update-tap:
+    needs: cli
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Homebrew formula
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          gh api repos/simonspoon/homebrew-tap/dispatches \
+            -f event_type=update-formula \
+            -f "client_payload[tool]=wisp-cli" \
+            -f "client_payload[version]=$VERSION" \
+            -f "client_payload[repo]=simonspoon/wisp"
