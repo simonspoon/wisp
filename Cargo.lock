@@ -99,7 +99,7 @@ checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 
 [[package]]
 name = "app"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -5394,7 +5394,7 @@ dependencies = [
 
 [[package]]
 name = "wisp-cli"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "base64 0.22.1",
  "clap",
@@ -5410,7 +5410,7 @@ dependencies = [
 
 [[package]]
 name = "wisp-core"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -5420,7 +5420,7 @@ dependencies = [
 
 [[package]]
 name = "wisp-protocol"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -5430,7 +5430,7 @@ dependencies = [
 
 [[package]]
 name = "wisp-server"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "axum",
  "futures-util",
