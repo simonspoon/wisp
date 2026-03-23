@@ -133,7 +133,7 @@ mod tests {
         for i in 0..5 {
             stack.push(&store);
             store
-                .add(&format!("Node{i}"), NodeType::Frame, root_id)
+                .add(format!("Node{i}"), NodeType::Frame, root_id)
                 .unwrap();
         }
 

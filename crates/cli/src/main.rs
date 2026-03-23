@@ -431,9 +431,9 @@ fn shell_split(s: &str) -> Vec<String> {
     let mut args = Vec::new();
     let mut current = String::new();
     let mut in_quotes = false;
-    let mut chars = s.chars().peekable();
+    let chars = s.chars().peekable();
 
-    while let Some(c) = chars.next() {
+    for c in chars {
         match c {
             '"' => in_quotes = !in_quotes,
             ' ' | '\t' if !in_quotes => {
