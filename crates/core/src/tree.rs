@@ -57,6 +57,25 @@ fn render_node(store: &NodeStore, id: Uuid, depth: usize, output: &mut String) {
         output.push_str(&format!(" stroke={stroke}"));
     }
 
+    // Add auto-layout info
+    if node.auto_layout.mode == crate::model::LayoutMode::Flex {
+        let dir = format!("{:?}", node.auto_layout.direction).to_lowercase();
+        output.push_str(&format!(" flex={dir}"));
+        if let Some(gap) = node.auto_layout.gap {
+            output.push_str(&format!(" gap={}", crate::tree::fmt_num(gap)));
+        }
+    }
+
+    // Add z-index if set
+    if let Some(z) = node.style.z_index {
+        output.push_str(&format!(" z={z}"));
+    }
+
+    // Add text-auto-size annotation
+    if node.typography.text_auto_size == Some(true) {
+        output.push_str(" auto-size");
+    }
+
     // Add text content for text nodes
     if let Some(ref content) = node.typography.content {
         output.push_str(&format!(" \"{content}\""));

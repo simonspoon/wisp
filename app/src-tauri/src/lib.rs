@@ -72,6 +72,37 @@ async fn load_document(state: State<'_, AppState>, path: String) -> Result<Strin
 }
 
 #[tauri::command]
+async fn edit_node(
+    state: State<'_, AppState>,
+    id: String,
+    x: Option<f64>,
+    y: Option<f64>,
+    width: Option<f64>,
+    height: Option<f64>,
+) -> Result<(), String> {
+    let uuid: uuid::Uuid = id.parse().map_err(|e| format!("Invalid UUID: {e}"))?;
+    let mut store = state.store.lock().await;
+    state.undo_stack.lock().await.push(&store);
+    let node = store.get_mut(uuid).map_err(|e| e.to_string())?;
+    if let Some(x) = x {
+        node.layout.x = x;
+    }
+    if let Some(y) = y {
+        node.layout.y = y;
+    }
+    if let Some(w) = width {
+        node.layout.width = w;
+    }
+    if let Some(h) = height {
+        node.layout.height = h;
+    }
+    state.broadcast(RpcNotification::state_change(
+        wisp_protocol::StateChange::NodeEdited { id: uuid },
+    ));
+    Ok(())
+}
+
+#[tauri::command]
 async fn deliver_screenshot(
     state: State<'_, AppState>,
     request_id: String,
@@ -93,6 +124,7 @@ pub fn run() {
             get_nodes,
             get_root_id,
             create_node,
+            edit_node,
             save_document,
             load_document,
             deliver_screenshot,

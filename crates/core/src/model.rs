@@ -39,6 +39,9 @@ pub struct Style {
     /// Opacity from 0.0 to 1.0
     #[serde(skip_serializing_if = "Option::is_none")]
     pub opacity: Option<f64>,
+    /// Z-index for stacking order (higher = on top)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub z_index: Option<i32>,
 }
 
 /// Text-specific properties.
@@ -54,6 +57,9 @@ pub struct Typography {
     pub font_weight: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub line_height: Option<f64>,
+    /// When true, text wraps within width and height becomes auto
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text_auto_size: Option<bool>,
 }
 
 /// Partial layout for edits — only overwrite fields that are present.
@@ -105,6 +111,9 @@ impl Style {
         if other.opacity.is_some() {
             self.opacity = other.opacity;
         }
+        if other.z_index.is_some() {
+            self.z_index = other.z_index;
+        }
     }
 }
 
@@ -126,6 +135,110 @@ impl Typography {
         if other.line_height.is_some() {
             self.line_height = other.line_height;
         }
+        if other.text_auto_size.is_some() {
+            self.text_auto_size = other.text_auto_size;
+        }
+    }
+}
+
+/// Layout mode for a container node.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum LayoutMode {
+    #[default]
+    None,
+    Flex,
+}
+
+/// Flex direction.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum FlexDirection {
+    Row,
+    #[default]
+    Column,
+}
+
+/// Flex alignment.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum FlexAlign {
+    #[default]
+    Start,
+    Center,
+    End,
+    Stretch,
+    SpaceBetween,
+}
+
+/// Auto-layout (flexbox) properties for container nodes.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+pub struct AutoLayout {
+    #[serde(default)]
+    pub mode: LayoutMode,
+    #[serde(default)]
+    pub direction: FlexDirection,
+    #[serde(default)]
+    pub align_items: FlexAlign,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub justify_content: Option<FlexAlign>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gap: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub padding: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub padding_horizontal: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub padding_vertical: Option<f64>,
+}
+
+/// Partial auto-layout for edits.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+pub struct PartialAutoLayout {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<LayoutMode>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub direction: Option<FlexDirection>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub align_items: Option<FlexAlign>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub justify_content: Option<FlexAlign>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gap: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub padding: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub padding_horizontal: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub padding_vertical: Option<f64>,
+}
+
+impl AutoLayout {
+    pub fn merge(&mut self, partial: &PartialAutoLayout) {
+        if let Some(ref mode) = partial.mode {
+            self.mode = mode.clone();
+        }
+        if let Some(ref dir) = partial.direction {
+            self.direction = dir.clone();
+        }
+        if let Some(ref align) = partial.align_items {
+            self.align_items = align.clone();
+        }
+        if partial.justify_content.is_some() {
+            self.justify_content.clone_from(&partial.justify_content);
+        }
+        if partial.gap.is_some() {
+            self.gap = partial.gap;
+        }
+        if partial.padding.is_some() {
+            self.padding = partial.padding;
+        }
+        if partial.padding_horizontal.is_some() {
+            self.padding_horizontal = partial.padding_horizontal;
+        }
+        if partial.padding_vertical.is_some() {
+            self.padding_vertical = partial.padding_vertical;
+        }
     }
 }
 
@@ -140,6 +253,8 @@ pub struct Node {
     pub layout: Layout,
     pub style: Style,
     pub typography: Typography,
+    #[serde(default)]
+    pub auto_layout: AutoLayout,
 }
 
 impl Node {
@@ -153,6 +268,7 @@ impl Node {
             layout: Layout::default(),
             style: Style::default(),
             typography: Typography::default(),
+            auto_layout: AutoLayout::default(),
         }
     }
 
@@ -167,6 +283,7 @@ impl Node {
             layout: Layout::default(),
             style: Style::default(),
             typography: Typography::default(),
+            auto_layout: AutoLayout::default(),
         }
     }
 }
@@ -204,6 +321,7 @@ mod tests {
             stroke_width: Some(2.0),
             corner_radius: Some(8.0),
             opacity: Some(1.0),
+            z_index: Some(5),
         };
         let partial = Style {
             fill: Some("#00ff00".to_string()),
@@ -211,6 +329,7 @@ mod tests {
             stroke_width: None,
             corner_radius: None,
             opacity: None,
+            z_index: None,
         };
         style.merge(&partial);
         assert_eq!(style.fill.as_deref(), Some("#00ff00"));
@@ -218,6 +337,7 @@ mod tests {
         assert_eq!(style.stroke_width, Some(2.0));
         assert_eq!(style.corner_radius, Some(8.0));
         assert_eq!(style.opacity, Some(1.0));
+        assert_eq!(style.z_index, Some(5)); // preserved
     }
 
     #[test]
@@ -228,6 +348,7 @@ mod tests {
             font_size: Some(16.0),
             font_weight: Some(400),
             line_height: Some(1.5),
+            text_auto_size: None,
         };
         let partial = Typography {
             content: None,
@@ -235,6 +356,7 @@ mod tests {
             font_size: Some(24.0),
             font_weight: None,
             line_height: None,
+            text_auto_size: Some(true),
         };
         typo.merge(&partial);
         assert_eq!(typo.content.as_deref(), Some("Hello"));
@@ -242,5 +364,6 @@ mod tests {
         assert_eq!(typo.font_size, Some(24.0));
         assert_eq!(typo.font_weight, Some(400));
         assert_eq!(typo.line_height, Some(1.5));
+        assert_eq!(typo.text_auto_size, Some(true));
     }
 }

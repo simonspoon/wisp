@@ -26,7 +26,7 @@ enum Commands {
     /// Manage nodes
     Node {
         #[command(subcommand)]
-        action: NodeAction,
+        action: Box<NodeAction>,
     },
     /// Show the document tree
     Tree,
@@ -100,6 +100,30 @@ enum NodeAction {
         /// Opacity (0.0-1.0)
         #[arg(long)]
         opacity: Option<f64>,
+        /// Z-index for stacking order
+        #[arg(long)]
+        z_index: Option<i32>,
+        /// Enable text wrapping (auto-size height)
+        #[arg(long)]
+        text_wrap: bool,
+        /// Layout mode: none, flex
+        #[arg(long)]
+        layout_mode: Option<String>,
+        /// Flex direction: row, column
+        #[arg(long)]
+        direction: Option<String>,
+        /// Flex align items: start, center, end, stretch
+        #[arg(long)]
+        align: Option<String>,
+        /// Flex justify content: start, center, end, stretch, space_between
+        #[arg(long)]
+        justify: Option<String>,
+        /// Gap between flex children
+        #[arg(long)]
+        gap: Option<f64>,
+        /// Padding (all sides)
+        #[arg(long)]
+        padding: Option<f64>,
     },
     /// Edit a node
     Edit {
@@ -135,6 +159,30 @@ enum NodeAction {
         /// Opacity (0.0-1.0)
         #[arg(long)]
         opacity: Option<f64>,
+        /// Z-index for stacking order
+        #[arg(long)]
+        z_index: Option<i32>,
+        /// Enable text wrapping (auto-size height)
+        #[arg(long)]
+        text_wrap: bool,
+        /// Layout mode: none, flex
+        #[arg(long)]
+        layout_mode: Option<String>,
+        /// Flex direction: row, column
+        #[arg(long)]
+        direction: Option<String>,
+        /// Flex align items: start, center, end, stretch
+        #[arg(long)]
+        align: Option<String>,
+        /// Flex justify content: start, center, end, stretch, space_between
+        #[arg(long)]
+        justify: Option<String>,
+        /// Gap between flex children
+        #[arg(long)]
+        gap: Option<f64>,
+        /// Padding (all sides)
+        #[arg(long)]
+        padding: Option<f64>,
     },
     /// Delete a node
     Delete {
@@ -505,7 +553,7 @@ fn build_request(command: &Commands) -> Result<(String, Value), Box<dyn std::err
         Commands::Redo => Ok(("doc.redo".to_string(), serde_json::json!({}))),
         Commands::Watch | Commands::Session => Err("watch/session are handled separately".into()),
         Commands::Screenshot { .. } => Ok(("doc.screenshot".to_string(), serde_json::json!({}))),
-        Commands::Node { action } => match action {
+        Commands::Node { action } => match action.as_ref() {
             NodeAction::Add {
                 name,
                 node_type,
@@ -519,6 +567,14 @@ fn build_request(command: &Commands) -> Result<(String, Value), Box<dyn std::err
                 font_size,
                 radius,
                 opacity,
+                z_index,
+                text_wrap,
+                layout_mode,
+                direction,
+                align,
+                justify,
+                gap,
+                padding,
             } => {
                 let mut params = serde_json::json!({
                     "name": name,
@@ -535,7 +591,7 @@ fn build_request(command: &Commands) -> Result<(String, Value), Box<dyn std::err
                     });
                 }
 
-                if fill.is_some() || radius.is_some() || opacity.is_some() {
+                if fill.is_some() || radius.is_some() || opacity.is_some() || z_index.is_some() {
                     let mut style = serde_json::Map::new();
                     if let Some(fill) = fill {
                         style.insert("fill".into(), serde_json::json!(fill));
@@ -546,10 +602,13 @@ fn build_request(command: &Commands) -> Result<(String, Value), Box<dyn std::err
                     if let Some(o) = opacity {
                         style.insert("opacity".into(), serde_json::json!(o));
                     }
+                    if let Some(z) = z_index {
+                        style.insert("z_index".into(), serde_json::json!(z));
+                    }
                     params["style"] = Value::Object(style);
                 }
 
-                if text.is_some() || font_size.is_some() {
+                if text.is_some() || font_size.is_some() || *text_wrap {
                     let mut typo = serde_json::Map::new();
                     if let Some(text) = text {
                         typo.insert("content".into(), serde_json::json!(text));
@@ -557,7 +616,39 @@ fn build_request(command: &Commands) -> Result<(String, Value), Box<dyn std::err
                     if let Some(fs) = font_size {
                         typo.insert("font_size".into(), serde_json::json!(fs));
                     }
+                    if *text_wrap {
+                        typo.insert("text_auto_size".into(), serde_json::json!(true));
+                    }
                     params["typography"] = Value::Object(typo);
+                }
+
+                if layout_mode.is_some()
+                    || direction.is_some()
+                    || align.is_some()
+                    || justify.is_some()
+                    || gap.is_some()
+                    || padding.is_some()
+                {
+                    let mut al = serde_json::Map::new();
+                    if let Some(mode) = layout_mode {
+                        al.insert("mode".into(), serde_json::json!(mode));
+                    }
+                    if let Some(dir) = direction {
+                        al.insert("direction".into(), serde_json::json!(dir));
+                    }
+                    if let Some(a) = align {
+                        al.insert("align_items".into(), serde_json::json!(a));
+                    }
+                    if let Some(j) = justify {
+                        al.insert("justify_content".into(), serde_json::json!(j));
+                    }
+                    if let Some(g) = gap {
+                        al.insert("gap".into(), serde_json::json!(g));
+                    }
+                    if let Some(p) = padding {
+                        al.insert("padding".into(), serde_json::json!(p));
+                    }
+                    params["auto_layout"] = Value::Object(al);
                 }
 
                 Ok(("node.create".to_string(), params))
@@ -574,6 +665,14 @@ fn build_request(command: &Commands) -> Result<(String, Value), Box<dyn std::err
                 font_size,
                 radius,
                 opacity,
+                z_index,
+                text_wrap,
+                layout_mode,
+                direction,
+                align,
+                justify,
+                gap,
+                padding,
             } => {
                 let mut params = serde_json::json!({"id": id});
 
@@ -597,7 +696,7 @@ fn build_request(command: &Commands) -> Result<(String, Value), Box<dyn std::err
                     }
                     params["layout"] = Value::Object(layout);
                 }
-                if fill.is_some() || radius.is_some() || opacity.is_some() {
+                if fill.is_some() || radius.is_some() || opacity.is_some() || z_index.is_some() {
                     let mut style = serde_json::Map::new();
                     if let Some(fill) = fill {
                         style.insert("fill".into(), serde_json::json!(fill));
@@ -608,9 +707,12 @@ fn build_request(command: &Commands) -> Result<(String, Value), Box<dyn std::err
                     if let Some(o) = opacity {
                         style.insert("opacity".into(), serde_json::json!(o));
                     }
+                    if let Some(z) = z_index {
+                        style.insert("z_index".into(), serde_json::json!(z));
+                    }
                     params["style"] = Value::Object(style);
                 }
-                if text.is_some() || font_size.is_some() {
+                if text.is_some() || font_size.is_some() || *text_wrap {
                     let mut typo = serde_json::Map::new();
                     if let Some(text) = text {
                         typo.insert("content".into(), serde_json::json!(text));
@@ -618,7 +720,39 @@ fn build_request(command: &Commands) -> Result<(String, Value), Box<dyn std::err
                     if let Some(fs) = font_size {
                         typo.insert("font_size".into(), serde_json::json!(fs));
                     }
+                    if *text_wrap {
+                        typo.insert("text_auto_size".into(), serde_json::json!(true));
+                    }
                     params["typography"] = Value::Object(typo);
+                }
+
+                if layout_mode.is_some()
+                    || direction.is_some()
+                    || align.is_some()
+                    || justify.is_some()
+                    || gap.is_some()
+                    || padding.is_some()
+                {
+                    let mut al = serde_json::Map::new();
+                    if let Some(mode) = layout_mode {
+                        al.insert("mode".into(), serde_json::json!(mode));
+                    }
+                    if let Some(dir) = direction {
+                        al.insert("direction".into(), serde_json::json!(dir));
+                    }
+                    if let Some(a) = align {
+                        al.insert("align_items".into(), serde_json::json!(a));
+                    }
+                    if let Some(j) = justify {
+                        al.insert("justify_content".into(), serde_json::json!(j));
+                    }
+                    if let Some(g) = gap {
+                        al.insert("gap".into(), serde_json::json!(g));
+                    }
+                    if let Some(p) = padding {
+                        al.insert("padding".into(), serde_json::json!(p));
+                    }
+                    params["auto_layout"] = Value::Object(al);
                 }
 
                 Ok(("node.edit".to_string(), params))
@@ -709,7 +843,7 @@ fn format_response(
                 .unwrap_or(0);
             println!("Redone (undo: {undo_n}, redo: {redo_n})");
         }
-        Commands::Node { action } => match action {
+        Commands::Node { action } => match action.as_ref() {
             NodeAction::Add { .. } => {
                 if let Some(id) = result.get("id").and_then(|i| i.as_str()) {
                     println!("Created node {id}");

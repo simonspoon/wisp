@@ -189,6 +189,25 @@ body {
   color: #111111;
 }
 
+.canvas-node.canvas-selected {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  cursor: move;
+}
+
+.resize-handle {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  border: 1px solid #fff;
+  border-radius: 1px;
+  cursor: nwse-resize;
+  z-index: 9999;
+}
+
 /* Properties panel */
 .props {
   padding: 0 12px 12px;

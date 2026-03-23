@@ -27,4 +27,5 @@ wisp-core = { path = "../../crates/core" }
 wisp-server = { path = "../../crates/server" }
 wisp-protocol = { path = "../../crates/protocol" }
 tokio = { version = "1", features = ["full"] }
+uuid.workspace = true
 

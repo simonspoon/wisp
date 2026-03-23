@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
-use wisp_core::{Layout, NodeType, PartialLayout, Style, Typography};
+use wisp_core::{
+    AutoLayout, Layout, NodeType, PartialAutoLayout, PartialLayout, Style, Typography,
+};
 
 /// JSON-RPC 2.0 request.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -56,6 +58,8 @@ pub struct NodeCreateParams {
     pub style: Option<Style>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub typography: Option<Typography>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auto_layout: Option<AutoLayout>,
 }
 
 /// Result for node.create
@@ -76,6 +80,8 @@ pub struct NodeEditParams {
     pub style: Option<Style>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub typography: Option<Typography>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auto_layout: Option<PartialAutoLayout>,
 }
 
 /// Params for node.delete
@@ -281,6 +287,7 @@ mod tests {
             layout: None,
             style: None,
             typography: None,
+            auto_layout: None,
         };
         let json = serde_json::to_value(&params).unwrap();
         let decoded: NodeCreateParams = serde_json::from_value(json).unwrap();

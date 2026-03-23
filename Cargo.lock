@@ -107,6 +107,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-opener",
  "tokio",
+ "uuid",
  "wisp-core",
  "wisp-protocol",
  "wisp-server",

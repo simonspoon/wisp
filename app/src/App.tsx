@@ -11,8 +11,34 @@ interface WispNode {
   parent_id: string | null;
   children: string[];
   layout: { x: number; y: number; width: number; height: number };
-  style: { fill?: string; stroke?: string; stroke_width?: number; corner_radius?: number; opacity?: number };
-  typography: { content?: string; font_family?: string; font_size?: number; font_weight?: number; line_height?: number };
+  style: { fill?: string; stroke?: string; stroke_width?: number; corner_radius?: number; opacity?: number; z_index?: number };
+  typography: { content?: string; font_family?: string; font_size?: number; font_weight?: number; line_height?: number; text_auto_size?: boolean };
+  auto_layout: {
+    mode: string;
+    direction: string;
+    align_items: string;
+    justify_content?: string;
+    gap?: number;
+    padding?: number;
+    padding_horizontal?: number;
+    padding_vertical?: number;
+  };
+}
+
+interface DragState {
+  id: string;
+  startMouseX: number;
+  startMouseY: number;
+  origX: number;
+  origY: number;
+}
+
+interface ResizeState {
+  id: string;
+  startMouseX: number;
+  startMouseY: number;
+  origW: number;
+  origH: number;
 }
 
 function App() {
@@ -22,6 +48,8 @@ function App() {
   const [selectedNode, setSelectedNode] = createSignal<WispNode | null>(null);
   const [error, setError] = createSignal("");
   const [canvasScale, setCanvasScale] = createSignal(0.5);
+  const [dragging, setDragging] = createSignal<DragState | null>(null);
+  const [resizing, setResizing] = createSignal<ResizeState | null>(null);
 
   let pollInterval: number;
   let canvasAreaRef: HTMLElement | undefined;
@@ -60,6 +88,88 @@ function App() {
     const scaleW = availW / root.layout.width;
     const scaleH = availH / root.layout.height;
     setCanvasScale(Math.min(scaleW, scaleH, 1));
+  }
+
+  function handleCanvasMouseMove(e: MouseEvent) {
+    const scale = canvasScale();
+    const drag = dragging();
+    if (drag) {
+      const dx = (e.clientX - drag.startMouseX) / scale;
+      const dy = (e.clientY - drag.startMouseY) / scale;
+      const newX = Math.round(drag.origX + dx);
+      const newY = Math.round(drag.origY + dy);
+      // Optimistic local update
+      setNodes((prev) =>
+        prev.map((n) =>
+          n.id === drag.id ? { ...n, layout: { ...n.layout, x: newX, y: newY } } : n
+        )
+      );
+      return;
+    }
+    const resize = resizing();
+    if (resize) {
+      const dx = (e.clientX - resize.startMouseX) / scale;
+      const dy = (e.clientY - resize.startMouseY) / scale;
+      const newW = Math.max(1, Math.round(resize.origW + dx));
+      const newH = Math.max(1, Math.round(resize.origH + dy));
+      setNodes((prev) =>
+        prev.map((n) =>
+          n.id === resize.id ? { ...n, layout: { ...n.layout, width: newW, height: newH } } : n
+        )
+      );
+      return;
+    }
+  }
+
+  async function handleCanvasMouseUp() {
+    const drag = dragging();
+    if (drag) {
+      const node = nodes().find((n) => n.id === drag.id);
+      if (node) {
+        await invoke("edit_node", { id: drag.id, x: node.layout.x, y: node.layout.y });
+      }
+      setDragging(null);
+      refresh();
+      return;
+    }
+    const resize = resizing();
+    if (resize) {
+      const node = nodes().find((n) => n.id === resize.id);
+      if (node) {
+        await invoke("edit_node", { id: resize.id, width: node.layout.width, height: node.layout.height });
+      }
+      setResizing(null);
+      refresh();
+      return;
+    }
+  }
+
+  function startDrag(nodeId: string, e: MouseEvent) {
+    e.stopPropagation();
+    const node = nodes().find((n) => n.id === nodeId);
+    if (!node) return;
+    setSelectedNode(node);
+    setDragging({
+      id: nodeId,
+      startMouseX: e.clientX,
+      startMouseY: e.clientY,
+      origX: node.layout.x,
+      origY: node.layout.y,
+    });
+  }
+
+  function startResize(nodeId: string, e: MouseEvent) {
+    e.stopPropagation();
+    e.preventDefault();
+    const node = nodes().find((n) => n.id === nodeId);
+    if (!node) return;
+    setResizing({
+      id: nodeId,
+      startMouseX: e.clientX,
+      startMouseY: e.clientY,
+      origW: node.layout.width,
+      origH: node.layout.height,
+    });
   }
 
   let unlistenScreenshot: (() => void) | undefined;
@@ -107,7 +217,8 @@ function App() {
     const nodeMap = new Map(nodes().map((n) => [n.id, n]));
     return parent.children
       .map((id) => nodeMap.get(id))
-      .filter((n): n is WispNode => n !== undefined);
+      .filter((n): n is WispNode => n !== undefined)
+      .sort((a, b) => (a.style.z_index ?? 0) - (b.style.z_index ?? 0));
   }
 
   function renderNode(node: WispNode, depth: number) {
@@ -178,7 +289,13 @@ function App() {
         </aside>
 
         {/* Center: canvas preview */}
-        <section class="canvas-area" ref={canvasAreaRef}>
+        <section
+          class="canvas-area"
+          ref={canvasAreaRef}
+          onMouseMove={handleCanvasMouseMove}
+          onMouseUp={handleCanvasMouseUp}
+          onMouseLeave={handleCanvasMouseUp}
+        >
           <div class="canvas" style={{ "--canvas-scale": canvasScale().toString() }}>
             <Show when={rootNode()}>
               {(root) => (
@@ -190,7 +307,16 @@ function App() {
                   }}
                 >
                   <For each={getChildren(root().id)}>
-                    {(child) => <CanvasNode node={child} allNodes={nodes()} />}
+                    {(child) => (
+                      <CanvasNode
+                        node={child}
+                        allNodes={nodes()}
+                        selectedId={selectedNode()?.id ?? null}
+                        onDragStart={startDrag}
+                        onResizeStart={startResize}
+                        onSelect={(n) => setSelectedNode(n)}
+                      />
+                    )}
                   </For>
                 </div>
               )}
@@ -267,28 +393,89 @@ function App() {
   );
 }
 
-function CanvasNode(props: { node: WispNode; allNodes: WispNode[] }) {
+interface CanvasNodeProps {
+  node: WispNode;
+  allNodes: WispNode[];
+  selectedId: string | null;
+  parentLayoutMode?: string;
+  onDragStart: (id: string, e: MouseEvent) => void;
+  onResizeStart: (id: string, e: MouseEvent) => void;
+  onSelect: (node: WispNode) => void;
+}
+
+function CanvasNode(props: CanvasNodeProps) {
   const children = () => {
     const nodeMap = new Map(props.allNodes.map((n) => [n.id, n]));
     return props.node.children
       .map((id) => nodeMap.get(id))
-      .filter((n): n is WispNode => n !== undefined);
+      .filter((n): n is WispNode => n !== undefined)
+      .sort((a, b) => (a.style.z_index ?? 0) - (b.style.z_index ?? 0));
+  };
+
+  const isSelected = () => props.selectedId === props.node.id;
+
+  const isFlex = () => props.node.auto_layout?.mode === "flex";
+  const isFlexChild = () => props.parentLayoutMode === "flex";
+
+  const mapAlign = (a: string | undefined): string => {
+    switch (a) {
+      case "start": return "flex-start";
+      case "center": return "center";
+      case "end": return "flex-end";
+      case "stretch": return "stretch";
+      case "space_between": return "space-between";
+      default: return "flex-start";
+    }
   };
 
   const style = () => {
     const n = props.node;
-    const s: Record<string, string> = {
-      position: "absolute",
-      left: `${n.layout.x}px`,
-      top: `${n.layout.y}px`,
-      width: n.layout.width > 0 ? `${n.layout.width}px` : "auto",
-      height: n.layout.height > 0 ? `${n.layout.height}px` : "auto",
-    };
+    const s: Record<string, string> = {};
+
+    // Positioning: flex children don't use absolute positioning
+    if (isFlexChild()) {
+      s["position"] = "relative";
+      s["width"] = n.layout.width > 0 ? `${n.layout.width}px` : "auto";
+      s["height"] = n.layout.height > 0 ? `${n.layout.height}px` : "auto";
+    } else {
+      s["position"] = "absolute";
+      s["left"] = `${n.layout.x}px`;
+      s["top"] = `${n.layout.y}px`;
+      s["width"] = n.layout.width > 0 ? `${n.layout.width}px` : "auto";
+      s["height"] = n.layout.height > 0 ? `${n.layout.height}px` : "auto";
+    }
+
+    // Flex container properties
+    if (isFlex()) {
+      s["display"] = "flex";
+      s["flex-direction"] = n.auto_layout.direction === "row" ? "row" : "column";
+      s["align-items"] = mapAlign(n.auto_layout.align_items);
+      if (n.auto_layout.justify_content) {
+        s["justify-content"] = mapAlign(n.auto_layout.justify_content);
+      }
+      if (n.auto_layout.gap !== undefined) {
+        s["gap"] = `${n.auto_layout.gap}px`;
+      }
+      const ph = n.auto_layout.padding_horizontal ?? n.auto_layout.padding ?? 0;
+      const pv = n.auto_layout.padding_vertical ?? n.auto_layout.padding ?? 0;
+      if (ph > 0 || pv > 0) {
+        s["padding"] = `${pv}px ${ph}px`;
+      }
+    }
 
     if (n.style.fill) s["background-color"] = n.style.fill;
     if (n.style.stroke) s["border"] = `${n.style.stroke_width || 1}px solid ${n.style.stroke}`;
     if (n.style.corner_radius) s["border-radius"] = `${n.style.corner_radius}px`;
     if (n.style.opacity !== undefined && n.style.opacity !== null) s["opacity"] = String(n.style.opacity);
+    if (n.style.z_index !== undefined && n.style.z_index !== null) s["z-index"] = String(n.style.z_index);
+
+    // Text wrapping: auto-size height when enabled
+    if (n.node_type === "text" && n.typography.text_auto_size) {
+      s["height"] = "auto";
+      s["word-wrap"] = "break-word";
+      s["overflow-wrap"] = "break-word";
+      s["white-space"] = "normal";
+    }
 
     return s;
   };
@@ -296,7 +483,12 @@ function CanvasNode(props: { node: WispNode; allNodes: WispNode[] }) {
   const isText = () => props.node.node_type === "text";
 
   return (
-    <div class={`canvas-node canvas-${props.node.node_type}`} style={style()} title={props.node.name}>
+    <div
+      class={`canvas-node canvas-${props.node.node_type} ${isSelected() ? "canvas-selected" : ""}`}
+      style={style()}
+      title={props.node.name}
+      onMouseDown={(e: MouseEvent) => props.onDragStart(props.node.id, e)}
+    >
       <Show when={isText() && props.node.typography.content}>
         <span
           style={{
@@ -311,8 +503,24 @@ function CanvasNode(props: { node: WispNode; allNodes: WispNode[] }) {
         </span>
       </Show>
       <For each={children()}>
-        {(child) => <CanvasNode node={child} allNodes={props.allNodes} />}
+        {(child) => (
+          <CanvasNode
+            node={child}
+            allNodes={props.allNodes}
+            selectedId={props.selectedId}
+            parentLayoutMode={props.node.auto_layout?.mode}
+            onDragStart={props.onDragStart}
+            onResizeStart={props.onResizeStart}
+            onSelect={props.onSelect}
+          />
+        )}
       </For>
+      <Show when={isSelected()}>
+        <div
+          class="resize-handle"
+          onMouseDown={(e: MouseEvent) => props.onResizeStart(props.node.id, e)}
+        />
+      </Show>
     </div>
   );
 }

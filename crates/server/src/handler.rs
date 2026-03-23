@@ -128,6 +128,9 @@ async fn handle_node_create(req: &RpcRequest, state: &AppState) -> RpcResponse {
                 if let Some(typography) = params.typography {
                     node.typography = typography;
                 }
+                if let Some(auto_layout) = params.auto_layout {
+                    node.auto_layout = auto_layout;
+                }
             }
 
             let change = StateChange::NodeCreated { id, parent_id };
@@ -167,6 +170,9 @@ async fn handle_node_edit(req: &RpcRequest, state: &AppState) -> RpcResponse {
             }
             if let Some(ref typography) = params.typography {
                 node.typography.merge(typography);
+            }
+            if let Some(ref auto_layout) = params.auto_layout {
+                node.auto_layout.merge(auto_layout);
             }
 
             state.broadcast(RpcNotification::state_change(StateChange::NodeEdited {
