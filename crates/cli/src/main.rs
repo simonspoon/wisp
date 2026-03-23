@@ -474,15 +474,30 @@ fn build_request(command: &Commands) -> Result<(String, Value), Box<dyn std::err
         }
         Commands::Components { action } => match action {
             ComponentAction::List => Ok(("component.list".to_string(), serde_json::json!({}))),
-            ComponentAction::Use { name, parent, x, y, label, value } => {
+            ComponentAction::Use {
+                name,
+                parent,
+                x,
+                y,
+                label,
+                value,
+            } => {
                 let mut params = serde_json::json!({
                     "name": name,
                     "parent_id": parent.as_deref().unwrap_or("00000000-0000-0000-0000-000000000000"),
                 });
-                if let Some(x) = x { params["x"] = serde_json::json!(x); }
-                if let Some(y) = y { params["y"] = serde_json::json!(y); }
-                if let Some(label) = label { params["label"] = serde_json::json!(label); }
-                if let Some(value) = value { params["value"] = serde_json::json!(value); }
+                if let Some(x) = x {
+                    params["x"] = serde_json::json!(x);
+                }
+                if let Some(y) = y {
+                    params["y"] = serde_json::json!(y);
+                }
+                if let Some(label) = label {
+                    params["label"] = serde_json::json!(label);
+                }
+                if let Some(value) = value {
+                    params["value"] = serde_json::json!(value);
+                }
                 Ok(("component.use".to_string(), params))
             }
         },
@@ -722,8 +737,7 @@ fn format_response(
                 let bytes = base64::engine::general_purpose::STANDARD
                     .decode(b64)
                     .map_err(|e| format!("Base64 decode error: {e}"))?;
-                std::fs::write(out, &bytes)
-                    .map_err(|e| format!("Failed to write {out}: {e}"))?;
+                std::fs::write(out, &bytes).map_err(|e| format!("Failed to write {out}: {e}"))?;
                 println!("Screenshot saved to {out} ({} bytes)", bytes.len());
             }
         }

@@ -412,8 +412,12 @@ async fn handle_component_use(req: &RpcRequest, state: &AppState) -> RpcResponse
             // Apply x, y to root component node
             if let Some(&root_id) = ids.first() {
                 if let Ok(node) = store.get_mut(root_id) {
-                    if let Some(x) = params.x { node.layout.x = x; }
-                    if let Some(y) = params.y { node.layout.y = y; }
+                    if let Some(x) = params.x {
+                        node.layout.x = x;
+                    }
+                    if let Some(y) = params.y {
+                        node.layout.y = y;
+                    }
                 }
                 // Apply label and value to child text nodes
                 if let Some(label) = &params.label {
