@@ -111,7 +111,7 @@ save/load, interactive sessions, and screenshots.
 The script builds the CLI if needed, starts the app, waits for the server, and
 runs through the full demo automatically. Press Ctrl+C to stop.
 
-**Source**: `demo.sh` (299 lines, showcases all v0.2 features).
+**Source**: `demo.sh` (299 lines, showcases all v0.3 features).
 
 ## What Next
 

@@ -48,10 +48,12 @@ All connected WebSocket clients
 ```
 
 The Tauri app also exposes IPC commands (`get_tree`, `get_nodes`, `get_root_id`,
-`create_node`, `save_document`, `load_document`, `deliver_screenshot`) that the
-SolidJS frontend calls via `@tauri-apps/api/core invoke()`.
+`create_node`, `edit_node`, `save_document`, `load_document`, `deliver_screenshot`)
+that the SolidJS frontend calls via `@tauri-apps/api/core invoke()`. The `edit_node`
+command is used by the frontend's drag-to-move and resize handles for direct
+manipulation of node layout.
 
-The WebSocket server starts inside Tauri's `setup` hook (`app/src-tauri/src/lib.rs:113`),
+The WebSocket server starts inside Tauri's `setup` hook (`app/src-tauri/src/lib.rs:132`),
 sharing the same `AppState` instance as the IPC commands.
 
 **Source**: `crates/server/src/lib.rs` (router), `crates/server/src/handler.rs`
@@ -67,7 +69,7 @@ Tauri frontend:
 2. Server handler creates a oneshot channel, stores it in screenshot_bridge
 3. Server calls screenshot_emitter (set by Tauri setup)
 4. Emitter fires Tauri event "screenshot-request" with a request_id
-5. Frontend listener (App.tsx:74) captures the DOM via html-to-image toPng()
+5. Frontend listener (App.tsx:184) captures the DOM via html-to-image toPng()
 6. Frontend calls IPC "deliver_screenshot" with base64 PNG data
 7. Server resolves the oneshot channel, returns PNG to the CLI
 8. CLI decodes base64 and writes the PNG file
@@ -77,8 +79,8 @@ Timeout: 10 seconds. If the frontend does not respond, the bridge entry is clean
 up and an error is returned.
 
 **Source**: `crates/server/src/state.rs` (ScreenshotBridge, request_screenshot,
-deliver_screenshot), `app/src-tauri/src/lib.rs:100-110` (emitter setup),
-`app/src/App.tsx:74-95` (DOM capture).
+deliver_screenshot), `app/src-tauri/src/lib.rs:136-142` (emitter setup),
+`app/src/App.tsx:184-205` (DOM capture).
 
 ## Document Model
 
@@ -99,6 +101,7 @@ type; type-specific behavior is determined by `node_type`.
 | `layout` | `Layout` | Position and dimensions |
 | `style` | `Style` | Visual properties |
 | `typography` | `Typography` | Text-specific properties |
+| `auto_layout` | `AutoLayout` | Flexbox layout properties (default: mode=none) |
 
 ### NodeType
 
@@ -257,9 +260,9 @@ The frontend is a SolidJS single-page application with a 3-panel layout:
 ### Polling
 
 The frontend polls the Tauri backend every 500ms (`setInterval(refresh, 500)` at
-`App.tsx:69`). Each poll calls three IPC commands in parallel: `get_tree`, `get_nodes`,
-`get_root_id`. This is a deliberate simplicity choice for v0.1 -- future versions
-may switch to push-based updates via the broadcast channel.
+`App.tsx:179`). Each poll calls three IPC commands in parallel: `get_tree`, `get_nodes`,
+`get_root_id`. This is a deliberate simplicity choice -- future versions may switch
+to push-based updates via the broadcast channel.
 
 ### Canvas Rendering
 
@@ -270,7 +273,9 @@ layout coordinates. Flex children (`parentLayoutMode === "flex"`) use
 `position: relative` and let CSS flexbox handle positioning. Style properties
 (fill, stroke, corner radius, opacity, clip, z-index) and typography properties
 (content, font family, font size, font weight, line height, color, text alignment)
-are all applied as inline CSS.
+are all applied as inline CSS. Nodes can be dragged to reposition and resized via
+corner handles; both operations call the `edit_node` IPC command with partial
+layout updates.
 
 ### Screenshot Capture
 

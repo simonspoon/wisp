@@ -333,7 +333,7 @@ The `params` object is a tagged enum (`StateChange`) with these variants:
 | `node.deleted` | `id` | `node.delete` |
 | `node.moved` | `id`, `new_parent_id` | `node.move` |
 
-**Source**: `crates/protocol/src/lib.rs:170-181` (StateChange enum).
+**Source**: `crates/protocol/src/lib.rs:178-187` (StateChange enum).
 
 ## Error Codes
 
@@ -349,4 +349,4 @@ Standard JSON-RPC 2.0 error codes plus application-specific codes.
 | `-32000` | `NODE_NOT_FOUND` | Referenced node ID does not exist in the store |
 | `-32001` | `OPERATION_FAILED` | Operation-specific failure (delete root, cyclic move, undo with empty stack, etc.) |
 
-**Source**: `crates/protocol/src/lib.rs:219-228`.
+**Source**: `crates/protocol/src/lib.rs:226-234`.
