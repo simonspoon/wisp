@@ -42,6 +42,19 @@ pub struct Style {
     /// Z-index for stacking order (higher = on top)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub z_index: Option<i32>,
+    /// Clip children that overflow this node's bounds
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clip: Option<bool>,
+}
+
+/// Text alignment.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum TextAlign {
+    #[default]
+    Left,
+    Center,
+    Right,
 }
 
 /// Text-specific properties.
@@ -60,6 +73,12 @@ pub struct Typography {
     /// When true, text wraps within width and height becomes auto
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub text_auto_size: Option<bool>,
+    /// Text color as hex string
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
+    /// Text alignment
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text_align: Option<TextAlign>,
 }
 
 /// Partial layout for edits — only overwrite fields that are present.
@@ -114,6 +133,9 @@ impl Style {
         if other.z_index.is_some() {
             self.z_index = other.z_index;
         }
+        if other.clip.is_some() {
+            self.clip = other.clip;
+        }
     }
 }
 
@@ -137,6 +159,12 @@ impl Typography {
         }
         if other.text_auto_size.is_some() {
             self.text_auto_size = other.text_auto_size;
+        }
+        if other.color.is_some() {
+            self.color.clone_from(&other.color);
+        }
+        if other.text_align.is_some() {
+            self.text_align.clone_from(&other.text_align);
         }
     }
 }
@@ -322,6 +350,7 @@ mod tests {
             corner_radius: Some(8.0),
             opacity: Some(1.0),
             z_index: Some(5),
+            clip: None,
         };
         let partial = Style {
             fill: Some("#00ff00".to_string()),
@@ -330,6 +359,7 @@ mod tests {
             corner_radius: None,
             opacity: None,
             z_index: None,
+            clip: None,
         };
         style.merge(&partial);
         assert_eq!(style.fill.as_deref(), Some("#00ff00"));
@@ -349,6 +379,8 @@ mod tests {
             font_weight: Some(400),
             line_height: Some(1.5),
             text_auto_size: None,
+            color: Some("#000000".to_string()),
+            text_align: None,
         };
         let partial = Typography {
             content: None,
@@ -357,6 +389,8 @@ mod tests {
             font_weight: None,
             line_height: None,
             text_auto_size: Some(true),
+            color: None,
+            text_align: Some(TextAlign::Center),
         };
         typo.merge(&partial);
         assert_eq!(typo.content.as_deref(), Some("Hello"));
@@ -365,5 +399,7 @@ mod tests {
         assert_eq!(typo.font_weight, Some(400));
         assert_eq!(typo.line_height, Some(1.5));
         assert_eq!(typo.text_auto_size, Some(true));
+        assert_eq!(typo.color.as_deref(), Some("#000000")); // preserved
+        assert_eq!(typo.text_align, Some(TextAlign::Center)); // updated
     }
 }

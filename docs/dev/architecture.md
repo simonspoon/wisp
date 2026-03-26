@@ -125,6 +125,8 @@ All fields are `Option` -- only present fields are serialized.
 | `stroke_width` | `Option<f64>` | Stroke width in pixels |
 | `corner_radius` | `Option<f64>` | Corner radius in pixels |
 | `opacity` | `Option<f64>` | Opacity from 0.0 to 1.0 |
+| `z_index` | `Option<i32>` | Stacking order (higher = on top) |
+| `clip` | `Option<bool>` | Clip children that overflow bounds (`overflow: hidden`) |
 
 ### Typography
 
@@ -137,6 +139,30 @@ All fields are `Option`.
 | `font_size` | `Option<f64>` | Font size in pixels |
 | `font_weight` | `Option<u16>` | Font weight (e.g. 400, 700) |
 | `line_height` | `Option<f64>` | Line height multiplier |
+| `text_auto_size` | `Option<bool>` | When true, text wraps and height becomes auto |
+| `color` | `Option<String>` | Text color as hex |
+| `text_align` | `Option<TextAlign>` | Text alignment: `left` (default), `center`, `right` |
+
+### TextAlign
+
+One of: `Left` (default), `Center`, `Right`. Serialized as snake_case.
+
+### AutoLayout
+
+Flexbox-like layout for container nodes. The frontend renders these as CSS flexbox.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `mode` | `LayoutMode` | `none` | `none` or `flex` |
+| `direction` | `FlexDirection` | `column` | `row` or `column` |
+| `align_items` | `FlexAlign` | `start` | Cross-axis alignment |
+| `justify_content` | `Option<FlexAlign>` | none | Main-axis alignment |
+| `gap` | `Option<f64>` | none | Gap between children in pixels |
+| `padding` | `Option<f64>` | none | Uniform padding |
+| `padding_horizontal` | `Option<f64>` | none | Horizontal padding (overrides `padding`) |
+| `padding_vertical` | `Option<f64>` | none | Vertical padding (overrides `padding`) |
+
+`FlexAlign` values: `start`, `center`, `end`, `stretch`, `space_between`.
 
 ### PartialLayout
 
@@ -239,9 +265,12 @@ may switch to push-based updates via the broadcast channel.
 
 The canvas scales to fit the viewport. The root node's dimensions (default
 1920x1080) are used to compute the scale factor. Each node is rendered by the
-`CanvasNode` component, which applies `position: absolute` with the node's layout
-coordinates and style properties (fill, stroke, corner radius, opacity). Text nodes
-render their `typography.content` with the specified font properties.
+`CanvasNode` component. Non-flex children use `position: absolute` with the node's
+layout coordinates. Flex children (`parentLayoutMode === "flex"`) use
+`position: relative` and let CSS flexbox handle positioning. Style properties
+(fill, stroke, corner radius, opacity, clip, z-index) and typography properties
+(content, font family, font size, font weight, line height, color, text alignment)
+are all applied as inline CSS.
 
 ### Screenshot Capture
 

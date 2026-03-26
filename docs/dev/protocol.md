@@ -63,8 +63,9 @@ is treated as "use root."
 | `node_type` | `string` | yes | One of: `frame`, `text`, `rectangle`, `ellipse`, `group` |
 | `parent_id` | `uuid` | yes | Parent node ID (nil = root) |
 | `layout` | `Layout` | no | Position and dimensions |
-| `style` | `Style` | no | Visual properties |
-| `typography` | `Typography` | no | Text properties |
+| `style` | `Style` | no | Visual properties (fill, stroke, corner_radius, opacity, z_index, clip) |
+| `typography` | `Typography` | no | Text properties (content, font_family, font_size, font_weight, line_height, text_auto_size, color, text_align) |
+| `auto_layout` | `AutoLayout` | no | Flexbox layout (mode, direction, align_items, justify_content, gap, padding) |
 
 **Result** (`NodeCreateResult`):
 
@@ -88,6 +89,7 @@ are overwritten. Unset fields are preserved.
 | `layout` | `PartialLayout` | no | Only set fields are merged (x, y, width, height are each optional) |
 | `style` | `Style` | no | Only set fields are merged |
 | `typography` | `Typography` | no | Only set fields are merged |
+| `auto_layout` | `PartialAutoLayout` | no | Only set fields are merged |
 
 **Result**: `{"ok": true}`
 

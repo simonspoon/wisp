@@ -11,8 +11,8 @@ interface WispNode {
   parent_id: string | null;
   children: string[];
   layout: { x: number; y: number; width: number; height: number };
-  style: { fill?: string; stroke?: string; stroke_width?: number; corner_radius?: number; opacity?: number; z_index?: number };
-  typography: { content?: string; font_family?: string; font_size?: number; font_weight?: number; line_height?: number; text_auto_size?: boolean };
+  style: { fill?: string; stroke?: string; stroke_width?: number; corner_radius?: number; opacity?: number; z_index?: number; clip?: boolean };
+  typography: { content?: string; font_family?: string; font_size?: number; font_weight?: number; line_height?: number; text_auto_size?: boolean; color?: string; text_align?: string };
   auto_layout: {
     mode: string;
     direction: string;
@@ -468,6 +468,13 @@ function CanvasNode(props: CanvasNodeProps) {
     if (n.style.corner_radius) s["border-radius"] = `${n.style.corner_radius}px`;
     if (n.style.opacity !== undefined && n.style.opacity !== null) s["opacity"] = String(n.style.opacity);
     if (n.style.z_index !== undefined && n.style.z_index !== null) s["z-index"] = String(n.style.z_index);
+    if (n.style.clip) s["overflow"] = "hidden";
+
+    // Text color
+    if (n.typography.color) s["color"] = n.typography.color;
+
+    // Text alignment
+    if (n.typography.text_align) s["text-align"] = n.typography.text_align;
 
     // Text wrapping: auto-size height when enabled
     if (n.node_type === "text" && n.typography.text_auto_size) {
@@ -497,6 +504,10 @@ function CanvasNode(props: CanvasNodeProps) {
               ? `${props.node.typography.font_size}px`
               : "inherit",
             "font-weight": props.node.typography.font_weight || "inherit",
+            "line-height": props.node.typography.line_height
+              ? String(props.node.typography.line_height)
+              : "inherit",
+            "width": "100%",
           }}
         >
           {props.node.typography.content}

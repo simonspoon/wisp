@@ -32,14 +32,29 @@ wisp node add <name> [flags]
 | `--width` | | `f64` | `0.0` | Width in pixels |
 | `--height` | | `f64` | `0.0` | Height in pixels |
 | `--fill` | | `string` | none | Fill color as hex (e.g. `"#ff0000"`) |
+| `--stroke` | | `string` | none | Stroke color as hex |
+| `--stroke-width` | | `f64` | none | Stroke width in pixels |
 | `--text` | | `string` | none | Text content (for text nodes) |
 | `--font-size` | | `f64` | none | Font size in pixels |
+| `--font-family` | | `string` | none | Font family name (e.g. `"monospace"`) |
+| `--font-weight` | | `u16` | none | Font weight (e.g. `400`, `700`) |
+| `--color` | | `string` | none | Text color as hex |
+| `--text-align` | | `string` | none | Text alignment: `left`, `center`, `right` |
 | `--radius` | | `f64` | none | Corner radius in pixels |
 | `--opacity` | | `f64` | none | Opacity from 0.0 to 1.0 |
+| `--z-index` | | `i32` | none | Stacking order (higher = on top) |
+| `--clip` | | `bool` | `false` | Clip children that overflow bounds |
+| `--text-wrap` | | `bool` | `false` | Enable text wrapping (auto-size height) |
+| `--layout-mode` | | `string` | none | Layout mode: `none`, `flex` |
+| `--direction` | | `string` | none | Flex direction: `row`, `column` |
+| `--align` | | `string` | none | Flex align items: `start`, `center`, `end`, `stretch` |
+| `--justify` | | `string` | none | Flex justify content: `start`, `center`, `end`, `stretch`, `space_between` |
+| `--gap` | | `f64` | none | Gap between flex children |
+| `--padding` | | `f64` | none | Padding (all sides) |
 
 Layout fields (`x`, `y`, `width`, `height`) are only sent if at least one is
-specified. Style fields (`fill`, `radius`, `opacity`) and typography fields
-(`text`, `font-size`) follow the same rule.
+specified. Style, typography, and auto-layout fields follow the same rule — each
+group is only included if at least one field in the group is set.
 
 **Output**: `Created node <uuid>`
 
@@ -47,6 +62,12 @@ specified. Style fields (`fill`, `radius`, `opacity`) and typography fields
 ```bash
 wisp node add "Card" -t rectangle -x 100 -y 50 --width 300 --height 200 \
   --fill "#f0f0f0" --radius 12
+
+# Flex container with children
+wisp node add "Row" -t frame --layout-mode flex --direction row --gap 8 --padding 12
+
+# Styled text
+wisp node add "Title" -t text --text "Hello" --color "#ff0000" --font-family "monospace" --text-align center
 ```
 
 ## wisp node edit
@@ -63,19 +84,34 @@ wisp node edit <id> [flags]
 | `<id>` | | `uuid` | (required) Node ID to edit |
 | `--name` | | `string` | New display name |
 | `--fill` | | `string` | Fill color |
+| `--stroke` | | `string` | Stroke color |
+| `--stroke-width` | | `f64` | Stroke width in pixels |
 | `--x` | `-x` | `f64` | X position |
 | `--y` | `-y` | `f64` | Y position |
 | `--width` | | `f64` | Width |
 | `--height` | | `f64` | Height |
 | `--text` | | `string` | Text content |
 | `--font-size` | | `f64` | Font size |
+| `--font-family` | | `string` | Font family |
+| `--font-weight` | | `u16` | Font weight |
+| `--color` | | `string` | Text color |
+| `--text-align` | | `string` | Text alignment: `left`, `center`, `right` |
 | `--radius` | | `f64` | Corner radius |
 | `--opacity` | | `f64` | Opacity |
+| `--z-index` | | `i32` | Stacking order |
+| `--clip` | | `bool` | Clip overflow |
+| `--text-wrap` | | `bool` | Enable text wrapping |
+| `--layout-mode` | | `string` | Layout mode: `none`, `flex` |
+| `--direction` | | `string` | Flex direction: `row`, `column` |
+| `--align` | | `string` | Flex align items |
+| `--justify` | | `string` | Flex justify content |
+| `--gap` | | `f64` | Flex gap |
+| `--padding` | | `f64` | Padding |
 
-Layout, style, and typography are each sent as partial objects -- only the fields
-you specify are included, and only those fields are merged on the server. For
-example, `wisp node edit <id> --fill "#red"` changes only the fill; position, size,
-and all other style fields remain unchanged.
+Layout, style, typography, and auto-layout are each sent as partial objects --
+only the fields you specify are included, and only those fields are merged on the
+server. For example, `wisp node edit <id> --fill "#red"` changes only the fill;
+position, size, and all other style fields remain unchanged.
 
 **Output**: `Node updated`
 

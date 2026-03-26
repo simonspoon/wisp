@@ -88,12 +88,30 @@ enum NodeAction {
         /// Fill color
         #[arg(long)]
         fill: Option<String>,
+        /// Stroke color
+        #[arg(long)]
+        stroke: Option<String>,
+        /// Stroke width in pixels
+        #[arg(long)]
+        stroke_width: Option<f64>,
         /// Text content
         #[arg(long)]
         text: Option<String>,
         /// Font size
         #[arg(long)]
         font_size: Option<f64>,
+        /// Font family
+        #[arg(long)]
+        font_family: Option<String>,
+        /// Font weight
+        #[arg(long)]
+        font_weight: Option<u16>,
+        /// Text color
+        #[arg(long)]
+        color: Option<String>,
+        /// Text alignment: left, center, right
+        #[arg(long)]
+        text_align: Option<String>,
         /// Corner radius
         #[arg(long)]
         radius: Option<f64>,
@@ -103,6 +121,9 @@ enum NodeAction {
         /// Z-index for stacking order
         #[arg(long)]
         z_index: Option<i32>,
+        /// Clip children that overflow bounds
+        #[arg(long)]
+        clip: bool,
         /// Enable text wrapping (auto-size height)
         #[arg(long)]
         text_wrap: bool,
@@ -135,6 +156,12 @@ enum NodeAction {
         /// Fill color
         #[arg(long)]
         fill: Option<String>,
+        /// Stroke color
+        #[arg(long)]
+        stroke: Option<String>,
+        /// Stroke width in pixels
+        #[arg(long)]
+        stroke_width: Option<f64>,
         /// X position
         #[arg(short, long)]
         x: Option<f64>,
@@ -153,6 +180,18 @@ enum NodeAction {
         /// Font size
         #[arg(long)]
         font_size: Option<f64>,
+        /// Font family
+        #[arg(long)]
+        font_family: Option<String>,
+        /// Font weight
+        #[arg(long)]
+        font_weight: Option<u16>,
+        /// Text color
+        #[arg(long)]
+        color: Option<String>,
+        /// Text alignment: left, center, right
+        #[arg(long)]
+        text_align: Option<String>,
         /// Corner radius
         #[arg(long)]
         radius: Option<f64>,
@@ -162,6 +201,9 @@ enum NodeAction {
         /// Z-index for stacking order
         #[arg(long)]
         z_index: Option<i32>,
+        /// Clip children that overflow bounds
+        #[arg(long)]
+        clip: bool,
         /// Enable text wrapping (auto-size height)
         #[arg(long)]
         text_wrap: bool,
@@ -563,11 +605,18 @@ fn build_request(command: &Commands) -> Result<(String, Value), Box<dyn std::err
                 width,
                 height,
                 fill,
+                stroke,
+                stroke_width,
                 text,
                 font_size,
+                font_family,
+                font_weight,
+                color,
+                text_align,
                 radius,
                 opacity,
                 z_index,
+                clip,
                 text_wrap,
                 layout_mode,
                 direction,
@@ -591,10 +640,23 @@ fn build_request(command: &Commands) -> Result<(String, Value), Box<dyn std::err
                     });
                 }
 
-                if fill.is_some() || radius.is_some() || opacity.is_some() || z_index.is_some() {
+                if fill.is_some()
+                    || stroke.is_some()
+                    || stroke_width.is_some()
+                    || radius.is_some()
+                    || opacity.is_some()
+                    || z_index.is_some()
+                    || *clip
+                {
                     let mut style = serde_json::Map::new();
                     if let Some(fill) = fill {
                         style.insert("fill".into(), serde_json::json!(fill));
+                    }
+                    if let Some(s) = stroke {
+                        style.insert("stroke".into(), serde_json::json!(s));
+                    }
+                    if let Some(sw) = stroke_width {
+                        style.insert("stroke_width".into(), serde_json::json!(sw));
                     }
                     if let Some(r) = radius {
                         style.insert("corner_radius".into(), serde_json::json!(r));
@@ -605,16 +667,38 @@ fn build_request(command: &Commands) -> Result<(String, Value), Box<dyn std::err
                     if let Some(z) = z_index {
                         style.insert("z_index".into(), serde_json::json!(z));
                     }
+                    if *clip {
+                        style.insert("clip".into(), serde_json::json!(true));
+                    }
                     params["style"] = Value::Object(style);
                 }
 
-                if text.is_some() || font_size.is_some() || *text_wrap {
+                if text.is_some()
+                    || font_size.is_some()
+                    || font_family.is_some()
+                    || font_weight.is_some()
+                    || color.is_some()
+                    || text_align.is_some()
+                    || *text_wrap
+                {
                     let mut typo = serde_json::Map::new();
                     if let Some(text) = text {
                         typo.insert("content".into(), serde_json::json!(text));
                     }
                     if let Some(fs) = font_size {
                         typo.insert("font_size".into(), serde_json::json!(fs));
+                    }
+                    if let Some(ff) = font_family {
+                        typo.insert("font_family".into(), serde_json::json!(ff));
+                    }
+                    if let Some(fw) = font_weight {
+                        typo.insert("font_weight".into(), serde_json::json!(fw));
+                    }
+                    if let Some(c) = color {
+                        typo.insert("color".into(), serde_json::json!(c));
+                    }
+                    if let Some(ta) = text_align {
+                        typo.insert("text_align".into(), serde_json::json!(ta));
                     }
                     if *text_wrap {
                         typo.insert("text_auto_size".into(), serde_json::json!(true));
@@ -657,15 +741,22 @@ fn build_request(command: &Commands) -> Result<(String, Value), Box<dyn std::err
                 id,
                 name,
                 fill,
+                stroke,
+                stroke_width,
                 x,
                 y,
                 width,
                 height,
                 text,
                 font_size,
+                font_family,
+                font_weight,
+                color,
+                text_align,
                 radius,
                 opacity,
                 z_index,
+                clip,
                 text_wrap,
                 layout_mode,
                 direction,
@@ -696,10 +787,23 @@ fn build_request(command: &Commands) -> Result<(String, Value), Box<dyn std::err
                     }
                     params["layout"] = Value::Object(layout);
                 }
-                if fill.is_some() || radius.is_some() || opacity.is_some() || z_index.is_some() {
+                if fill.is_some()
+                    || stroke.is_some()
+                    || stroke_width.is_some()
+                    || radius.is_some()
+                    || opacity.is_some()
+                    || z_index.is_some()
+                    || *clip
+                {
                     let mut style = serde_json::Map::new();
                     if let Some(fill) = fill {
                         style.insert("fill".into(), serde_json::json!(fill));
+                    }
+                    if let Some(s) = stroke {
+                        style.insert("stroke".into(), serde_json::json!(s));
+                    }
+                    if let Some(sw) = stroke_width {
+                        style.insert("stroke_width".into(), serde_json::json!(sw));
                     }
                     if let Some(r) = radius {
                         style.insert("corner_radius".into(), serde_json::json!(r));
@@ -710,15 +814,37 @@ fn build_request(command: &Commands) -> Result<(String, Value), Box<dyn std::err
                     if let Some(z) = z_index {
                         style.insert("z_index".into(), serde_json::json!(z));
                     }
+                    if *clip {
+                        style.insert("clip".into(), serde_json::json!(true));
+                    }
                     params["style"] = Value::Object(style);
                 }
-                if text.is_some() || font_size.is_some() || *text_wrap {
+                if text.is_some()
+                    || font_size.is_some()
+                    || font_family.is_some()
+                    || font_weight.is_some()
+                    || color.is_some()
+                    || text_align.is_some()
+                    || *text_wrap
+                {
                     let mut typo = serde_json::Map::new();
                     if let Some(text) = text {
                         typo.insert("content".into(), serde_json::json!(text));
                     }
                     if let Some(fs) = font_size {
                         typo.insert("font_size".into(), serde_json::json!(fs));
+                    }
+                    if let Some(ff) = font_family {
+                        typo.insert("font_family".into(), serde_json::json!(ff));
+                    }
+                    if let Some(fw) = font_weight {
+                        typo.insert("font_weight".into(), serde_json::json!(fw));
+                    }
+                    if let Some(c) = color {
+                        typo.insert("color".into(), serde_json::json!(c));
+                    }
+                    if let Some(ta) = text_align {
+                        typo.insert("text_align".into(), serde_json::json!(ta));
                     }
                     if *text_wrap {
                         typo.insert("text_auto_size".into(), serde_json::json!(true));

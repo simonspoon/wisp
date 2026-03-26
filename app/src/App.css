@@ -186,7 +186,7 @@ body {
 
 .canvas-node.canvas-text {
   box-shadow: none;
-  color: #111111;
+  color: #111111;  /* default text color, overridden by typography.color */
 }
 
 .canvas-node.canvas-selected {

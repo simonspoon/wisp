@@ -71,9 +71,27 @@ fn render_node(store: &NodeStore, id: Uuid, depth: usize, output: &mut String) {
         output.push_str(&format!(" z={z}"));
     }
 
+    // Add clip annotation
+    if node.style.clip == Some(true) {
+        output.push_str(" clip");
+    }
+
     // Add text-auto-size annotation
     if node.typography.text_auto_size == Some(true) {
         output.push_str(" auto-size");
+    }
+
+    // Add text color
+    if let Some(ref color) = node.typography.color {
+        output.push_str(&format!(" color={color}"));
+    }
+
+    // Add text alignment if non-default
+    if let Some(ref align) = node.typography.text_align {
+        if *align != crate::model::TextAlign::Left {
+            let align_str = format!("{:?}", align).to_lowercase();
+            output.push_str(&format!(" align={align_str}"));
+        }
     }
 
     // Add text content for text nodes
