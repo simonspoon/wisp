@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="icon.png" width="128" height="128" alt="wisp">
+</p>
+
 # Wisp
 
 A desktop design canvas that agents can see and control.
